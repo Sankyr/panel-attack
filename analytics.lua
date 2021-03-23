@@ -21,7 +21,11 @@ local analytics_data = {
                   -- 1 to 12, then 13+, 1 is obviously meaningless
                   reached_chains = { },
                   -- 1 to 40, 1 to 3 being meaningless
-                  used_combos = { }
+                  used_combos = { },
+                  -- frame numbers stack height changed, and what the new height was
+                  height_changes = { },
+                  -- frame numbers garbage dropped, and what the garbage was
+                  garbage_drops = {}
                },
 
              overall = 
@@ -271,6 +275,20 @@ function analytics.register_move()
   for _,analytic in pairs(analytics_filters) do
     analytic.move_count = math.min(analytic.move_count + 1,analytic_data_cap)
   end
+end
+
+function analytics.register_garbage_drop(frame, garbage)
+  if not config.enable_analytics then
+    return
+  end
+  analytics_data.last_game.garbage_drops[#analytics_data.last_game.garbage_drops+1] = {frame, garbage}
+end
+
+function analytics.register_height_change(frame, new_height)
+  if not config.enable_analytics then
+    return
+  end
+  analytics_data.last_game.height_changes[#analytics_data.last_game.height_changes+1] = {frame, new_height}
 end
 
 function analytics.game_ends()

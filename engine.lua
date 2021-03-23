@@ -1355,7 +1355,12 @@ function Stack.PdP(self)
   for col_idx = 1, width do
     if panels[top_row][col_idx]:dangerous() then
       self.panels_in_top_row = true
+      if self.enable_analytics then
+        --determine stack_height and log whether it's changed in analytics.height_changes
+      end
+      
     end
+    
   end
   -- If any panels (dangerous or not) are in rows above the top row, garbage should not fall.
   for row_idx = top_row + 1, #self.panels do
