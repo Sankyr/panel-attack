@@ -1355,10 +1355,6 @@ function Stack.PdP(self)
   for col_idx = 1, width do
     if panels[top_row][col_idx]:dangerous() then
       self.panels_in_top_row = true
-      if self.enable_analytics then
-        --determine stack_height and log whether it's changed in analytics.height_changes
-      end
-      
     end
     
   end
@@ -1387,6 +1383,28 @@ function Stack.PdP(self)
       end
     end
   end
+  --find stack height (row of highest dangerous panel) for analytics
+  if self.enable_analytics then
+    local height_found = nil
+    local row_to_check = #self.panels
+    while not height_found do
+      local col_to_check = 1
+      while not height_found and col_to_check <= width do 
+        if panels[row_to_check][col_to_check]:dangerous() then
+          height_found = row_idx        
+        end
+        col_to_check = col_to_check + 1
+      end
+      row_to_check = row_to_check - 1
+      if row_to_check == 0 then
+        --There are no panels? Nice perfect clear!
+        height_found = 0
+      end
+    end
+    if not analytics.last_height() or analytics.last_height() ~= height_found then
+      analytics.register_height_change(self.CLOCK, height_found)
+    end
+  end    
   --Play Sounds / music
   if not music_mute and not game_is_paused and not (P1 and P1.play_to_end) and not (P2 and P2.play_to_end) then
 

@@ -52,6 +52,8 @@ local function analytic_clear(analytic)
   analytic.swap_count = 0
   analytic.reached_chains = {}
   analytic.used_combos = {}
+  analytic.height_changes = {}
+  analytic.garbage_drops = {}
 end
 
 local amount_of_garbages_lines_per_combo = {0, 0, 0, 0.5, 1, 1, 1, 2, 2, 2, 2, 2, 3, 4, [20]=6, [27]=8 }
@@ -291,9 +293,13 @@ function analytics.register_height_change(frame, new_height)
   analytics_data.last_game.height_changes[#analytics_data.last_game.height_changes+1] = {frame, new_height}
 end
 
+function analytics.last_height()
+  return analytics_data.last_game.height_changes[#analytics_data.last_game.height_changes] or nil
+end
+
 function analytics.game_ends()
   if not config.enable_analytics then
-    return
+    return 
   end
 
   write_analytics_files()
