@@ -1391,7 +1391,7 @@ function Stack.PdP(self)
       local col_to_check = 1
       while not height_found and col_to_check <= width do 
         if panels[row_to_check][col_to_check]:dangerous() then
-          height_found = row_idx        
+          height_found = row_to_check       
         end
         col_to_check = col_to_check + 1
       end
@@ -1401,6 +1401,8 @@ function Stack.PdP(self)
         height_found = 0
       end
     end
+    --print("last height was "..analytics.last_height())
+    --print("height found was"..height_found)
     if not analytics.last_height() or analytics.last_height() ~= height_found then
       analytics.register_height_change(self.CLOCK, height_found)
     end

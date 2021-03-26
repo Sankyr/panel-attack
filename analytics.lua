@@ -287,14 +287,20 @@ function analytics.register_garbage_drop(frame, garbage)
 end
 
 function analytics.register_height_change(frame, new_height)
+  print("Registering Height Change:")
   if not config.enable_analytics then
     return
   end
+  print("height at frame "..frame.." is "..new_height)
   analytics_data.last_game.height_changes[#analytics_data.last_game.height_changes+1] = {frame, new_height}
 end
 
 function analytics.last_height()
-  return analytics_data.last_game.height_changes[#analytics_data.last_game.height_changes] or nil
+  if not analytics_data.last_game.height_changes[1] then
+    return nil
+  else
+    return analytics_data.last_game.height_changes[#analytics_data.last_game.height_changes][2]
+  end
 end
 
 function analytics.game_ends()
