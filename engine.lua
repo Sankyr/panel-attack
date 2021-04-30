@@ -401,6 +401,40 @@ function GarbageQueue.grow_chain(self)
 -- or add a 6-wide if there is not chain garbage yet in the queue
 end
 
+function garbage_to_string(garbage)
+  local ret = ""
+  local width, height, metal, from_chain = unpack(garbage)
+  if height > 1 and from_chain then 
+    if height > 14 then
+      height = 14
+    end
+    ret = height.."-tall"
+  else --[[height should be 1]] if metal then
+    ret = "6-wide-metal"
+  else if from_chain then
+    ret = "1-tall"
+  else --it's a combo
+    ret = width.."-wide"
+  end
+  return ret
+end
+
+function string_to_garbage(garbage_string)
+  local width, height, metal, from_chain = 6, 1, false, false --some these will get set again in a moment under most conditions
+  if garbage_string = "6-wide-metal" then
+    metal = true
+  else 
+    from_chain = strsub(garbage_string, #garbage_string-5) == "-tall"
+    if from_chain then
+      width = 6
+      height = tonumber(strsub(garbage_string, 1, #garbage_string-5)
+    else --it's combo garbage
+      width = tonumber(strsub(garbage_string, 1, #garbage_string-5)
+    end
+  end
+  return {width, height, metal, from_chain}
+end
+
 Telegraph = class(function(self, sender, recipient)
   self.garbage_queue = new GarbageQueue()
   self.stopper = { garbage_type, size, frame_to_release}
