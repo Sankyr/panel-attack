@@ -409,9 +409,9 @@ function garbage_to_string(garbage)
       height = 14
     end
     ret = height.."-tall"
-  else --[[height should be 1]] if metal then
+  elseif --[[height should be 1]]metal then
     ret = "6-wide-metal"
-  else if from_chain then
+  elseif from_chain then
     ret = "1-tall"
   else --it's a combo
     ret = width.."-wide"
@@ -421,15 +421,15 @@ end
 
 function string_to_garbage(garbage_string)
   local width, height, metal, from_chain = 6, 1, false, false --some these will get set again in a moment under most conditions
-  if garbage_string = "6-wide-metal" then
+  if garbage_string == "6-wide-metal" then
     metal = true
   else 
     from_chain = strsub(garbage_string, #garbage_string-5) == "-tall"
     if from_chain then
       width = 6
-      height = tonumber(strsub(garbage_string, 1, #garbage_string-5)
+      height = tonumber(strsub(garbage_string, 1, #garbage_string-5))
     else --it's combo garbage
-      width = tonumber(strsub(garbage_string, 1, #garbage_string-5)
+      width = tonumber(strsub(garbage_string, 1, #garbage_string-5))
     end
   end
   return {width, height, metal, from_chain}
