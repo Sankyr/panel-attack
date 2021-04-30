@@ -1730,6 +1730,9 @@ function Stack.drop_garbage(self, width, height, metal)
       end
     end
   end
+  if self.enable_analytics then
+    analytics.register_garbage_drop(self.CLOCK, garbage_string)
+  end
 
   return true
 end
