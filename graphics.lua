@@ -387,6 +387,10 @@ function Stack.render(self)
               elseif panel.y_offset == -1 then
                 local p_w, p_h = panels[self.panels_dir].images.classic[panel.color][1]:getDimensions()
                 draw(panels[self.panels_dir].images.classic[panel.color][1], draw_x, draw_y, 0, 16 / p_w, 16 / p_h)
+                gfx_q:push({love.graphics.setBlendMode, {"alpha"}})
+                gfx_q:push({love.graphics.setColor, {0, 0, 0, .3}})
+                gfx_q:push({love.graphics.rectangle, {"fill", draw_x*GFX_SCALE, draw_y*GFX_SCALE, 16 * GFX_SCALE, 16 * GFX_SCALE}})
+                gfx_q:push({love.graphics.setColor, {1, 1, 1, 1}})
               end
             elseif flash_time % 2 == 1 then
               if panel.metal then
