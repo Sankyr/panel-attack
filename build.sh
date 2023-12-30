@@ -5,6 +5,7 @@
 #
 # Your panel-attack repository needs to have a directory in the directory above the repo named "love-11.4-win32"
 # That directory is expected to contain the contents of the unzipped 32-bit windows version of love downloaded from the love2d mainpage
+# build local discard-love
 
 shopt -s extglob
 
@@ -20,7 +21,7 @@ echo "Building... Results can be found at ${build_dir}"
 echo "Generating panel attack love file"
 
 # We are explicitly specifying which files are included. Make sure to add specific files in alphabetical order.
-zip -r --quiet "${build_dir}panel-attack.love" *.lua *.ttf *.otf readme*.txt *.md *.ogg characters computerPlayers default_data engine libraries localization.csv panels rich_presence select_screen stages themes -x ".*" \*__MACOSX* \*\.DS_Store
+zip -r --quiet "${build_dir}panel-attack.love" *.lua *.ttf *.otf readme*.txt *.md *.ogg *.glsl characters computerPlayers default_data engine libraries localization.csv panels rich_presence select_screen stages themes -x ".*" \*__MACOSX* \*\.DS_Store
 
 if [ -n "$1" ] && [ $1 == "auto-updater" ]
 then

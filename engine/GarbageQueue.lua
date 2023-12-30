@@ -118,7 +118,7 @@ GarbageQueue = class(function(s)
     local result = nil
   
     if newChain then
-      result = {{6,1,false,true, timeAttackInteracts=timeAttackInteracts, finalized=nil}}
+      result = {{stackWidth,1,false,true, timeAttackInteracts=timeAttackInteracts, finalized=nil}}
       self:push(result) --a garbage block 6-wide, 1-tall, not metal, from_chain
     else 
       result = self.chain_garbage[self.chain_garbage.first]

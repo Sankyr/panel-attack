@@ -72,7 +72,7 @@ Stack =
 
     -- frame.png dimensions
     if wantsCanvas then
-      s.canvas = love.graphics.newCanvas(104 * GFX_SCALE, 204 * GFX_SCALE, {dpiscale=GAME:newCanvasSnappedScale()})
+      s.canvas = love.graphics.newCanvas(290 * GFX_SCALE, 204 * GFX_SCALE, {dpiscale=GAME:newCanvasSnappedScale()}) --312
     end
 
     -- The player's speed level decides the amount of time
@@ -112,16 +112,16 @@ Stack =
     -- This is typically constant but maybe some day we would allow different ones 
     -- for different game modes or need to change it based on board width.
     s.garbageSizeDropColumnMaps = {
-      {1, 2, 3, 4, 5, 6},
-      {1, 3, 5,},
-      {1, 4},
-      {1, 2, 3},
-      {1, 2},
-      {1}
+      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18},
+      {1, 3, 5, 7, 9, 11, 13, 15, 17},
+      {1, 4, 7, 10, 13, 16},
+      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17},
+      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
     }
     -- The current index of the above table we are currently using for the drop column.
     -- This increases by 1 wrapping every time garbage drops.
-    s.currentGarbageDropColumnIndexes = {1, 1, 1, 1, 1, 1}
+    s.currentGarbageDropColumnIndexes = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 
     s.later_garbage = {} -- Queue of garbage that is done waiting in telegraph, and been popped out, and will be sent to our stack next frame
     s.garbage_q = GarbageQueue(s) -- Queue of garbage that is about to be dropped
@@ -147,7 +147,8 @@ Stack =
     -- panel[i][j] gets the panel at row i where j is the column index counting from left to right starting from 1
     -- the update order for panels is bottom to top and left to right as well
     s.panels = {}
-    s.width = 6
+    s.width = 18
+    stackWidth = s.width
     s.height = 12
     for i = 0, s.height do
       s.panels[i] = {}
@@ -419,7 +420,7 @@ function Stack:moveForPlayerNumber(player_num)
   self.panelOriginXOffset = 4
   self.panelOriginYOffset = 4
 
-  local outerNonScaled = centerX - (outerStackXMovement * self.mirror_x)
+  local outerNonScaled = 200 -- centerX - (outerStackXMovement * self.mirror_x)
   self.origin_x = (self.panelOriginXOffset * self.mirror_x) + (outerNonScaled / GFX_SCALE) -- The outer X value of the frame
 
   local frameOriginNonScaled = outerNonScaled
@@ -1900,7 +1901,11 @@ end
 function Stack:moveCursorInDirection(directionString)
   assert(directionString ~= nil and type(directionString) == "string")
   self.cur_row = bound(1, self.cur_row + d_row[directionString], self.top_cur_row)
-  self.cur_col = bound(1, self.cur_col + d_col[directionString], self.width - 1)
+  self.cur_col = (self.cur_col + d_col[directionString]) % self.width -- bound(1, self.cur_col + d_col[directionString], self.width)
+  if self.cur_col == 0 then
+    self.cur_col = self.width
+  end
+  cursorPos[self.which] = self.cur_col
 end
 
 -- Called on a stack by the attacker with the time to start processing the garbage drop
@@ -2098,30 +2103,31 @@ function Stack.canSwap(self, row, column)
   local panels = self.panels
   -- in order for a swap to occur, one of the two panels in
   -- the cursor must not be a non-panel.
+  local next_column = (column) % self.width + 1
   local do_swap =
-    (panels[row][column].color ~= 0 or panels[row][column + 1].color ~= 0) and -- also, both spaces must be swappable.
+    (panels[row][column].color ~= 0 or panels[row][next_column].color ~= 0) and -- also, both spaces must be swappable.
     panels[row][column]:canSwap() and
-    panels[row][column + 1]:canSwap() and -- also, neither space above us can be hovering.
-    (row == #panels or (panels[row + 1][column].state ~= "hovering" and panels[row + 1][column + 1].state ~= "hovering")) and --also, we can't swap if the game countdown isn't finished
+    panels[row][next_column]:canSwap() and -- also, neither space above us can be hovering.
+    (row == #panels or (panels[row + 1][column].state ~= "hovering" and panels[row + 1][next_column].state ~= "hovering")) and --also, we can't swap if the game countdown isn't finished
     not self.do_countdown and --also, don't swap on the first frame
     not (self.clock and self.clock <= 1)
   -- If you have two pieces stacked vertically, you can't move
   -- both of them to the right or left by swapping with empty space.
   -- TODO: This might be wrong if something lands on a swapping panel?
-  if panels[row][column].color == 0 or panels[row][column + 1].color == 0 then -- if either panel inside the cursor is air
+  if panels[row][column].color == 0 or panels[row][next_column].color == 0 then -- if either panel inside the cursor is air
     do_swap = do_swap -- failing the condition if we already determined we cant swap 
       and not -- one of the next 4 lines must be false in order to swap
         (row ~= self.height -- true if cursor is not at top of stack
-        and (panels[row + 1][column].state == "swapping" and panels[row + 1][column + 1].state == "swapping") -- true if BOTH panels above cursor are swapping
-        and (panels[row + 1][column].color == 0 or panels[row + 1][column + 1].color == 0) -- true if either panel above the cursor is air
-        and (panels[row + 1][column].color ~= 0 or panels[row + 1][column + 1].color ~= 0)) -- true if either panel above the cursor is not air
+        and (panels[row + 1][column].state == "swapping" and panels[row + 1][next_column].state == "swapping") -- true if BOTH panels above cursor are swapping
+        and (panels[row + 1][column].color == 0 or panels[row + 1][next_column].color == 0) -- true if either panel above the cursor is air
+        and (panels[row + 1][column].color ~= 0 or panels[row + 1][next_column].color ~= 0)) -- true if either panel above the cursor is not air
 
     do_swap = do_swap  -- failing the condition if we already determined we cant swap 
       and not -- one of the next 4 lines must be false in order to swap
         (row ~= 1 -- true if the cursor is not at the bottom of the stack
-        and (panels[row - 1][column].state == "swapping" and panels[row - 1][column + 1].state == "swapping") -- true if BOTH panels below cursor are swapping
-        and (panels[row - 1][column].color == 0 or panels[row - 1][column + 1].color == 0) -- true if either panel below the cursor is air
-        and (panels[row - 1][column].color ~= 0 or panels[row - 1][column + 1].color ~= 0)) -- true if either panel below the cursor is not air
+        and (panels[row - 1][column].state == "swapping" and panels[row - 1][next_column].state == "swapping") -- true if BOTH panels below cursor are swapping
+        and (panels[row - 1][column].color == 0 or panels[row - 1][next_column].color == 0) -- true if either panel below the cursor is air
+        and (panels[row - 1][column].color ~= 0 or panels[row - 1][next_column].color ~= 0)) -- true if either panel below the cursor is not air
   end
 
   do_swap = do_swap and (not self.puzzle or self.puzzle.moves == 0 or self.puzzle.remaining_moves > 0)
@@ -2131,10 +2137,12 @@ end
 
 -- Swaps panels at the current cursor location
 function Stack:swap(row, col)
+  local next_col = col % self.width + 1
+  
   local panels = self.panels
   self:processPuzzleSwap()
   local leftPanel = panels[row][col]
-  local rightPanel = panels[row][col + 1]
+  local rightPanel = panels[row][next_col]
   leftPanel:startSwap(true)
   rightPanel:startSwap(false)
   Panel.switch(leftPanel, rightPanel, panels)
@@ -2150,8 +2158,8 @@ function Stack:swap(row, col)
     if (panels[row][col].color ~= 0) and (panels[row - 1][col].color == 0 or panels[row - 1][col].state == "falling") then
       panels[row][col].dont_swap = true
     end
-    if (panels[row][col + 1].color ~= 0) and (panels[row - 1][col + 1].color == 0 or panels[row - 1][col + 1].state == "falling") then
-      panels[row][col + 1].dont_swap = true
+    if (panels[row][next_col].color ~= 0) and (panels[row - 1][next_col].color == 0 or panels[row - 1][next_col].state == "falling") then
+      panels[row][next_col].dont_swap = true
     end
   end
 
@@ -2162,8 +2170,8 @@ function Stack:swap(row, col)
     if panels[row][col].color == 0 and panels[row + 1][col].color ~= 0 then
       panels[row][col].dont_swap = true
     end
-    if panels[row][col + 1].color == 0 and panels[row + 1][col + 1].color ~= 0 then
-      panels[row][col + 1].dont_swap = true
+    if panels[row][next_col].color == 0 and panels[row + 1][next_col].color ~= 0 then
+      panels[row][next_col].dont_swap = true
     end
   end
 end
@@ -2228,9 +2236,14 @@ end
 function Stack.getGarbageSpawnColumn(self, garbageWidth)
   local columns = self.garbageSizeDropColumnMaps[garbageWidth]
   local index = self.currentGarbageDropColumnIndexes[garbageWidth]
+
+  if garbageWidth == self.width then
+    columns = self.garbageSizeDropColumnMaps[1]
+  else
+    self.currentGarbageDropColumnIndexes[garbageWidth] = wrap(1, index + 1, #columns)
+  end
   local spawnColumn = columns[index]
   -- the next piece of garbage of that width should fall at a different idx
-  self.currentGarbageDropColumnIndexes[garbageWidth] = wrap(1, index + 1, #columns)
   return spawnColumn
 end
 

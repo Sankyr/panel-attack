@@ -414,7 +414,7 @@ function Telegraph:render()
         local draw_x = self:telegraphRenderXPosition(currentIndex)
         if not current_block[3]--[[is_metal]] then
           local height = math.min(current_block[2], 14)
-          if height > 1 then -- For illegal chain garbage, default to using the chain size graphics
+          if height > 1 or current_block[1] == 18 then -- For illegal chain garbage, default to using the chain size graphics
             current_block[1] = 6
           end
           local orig_grb_w, orig_grb_h = characters[senderCharacter].telegraph_garbage_images[height][current_block[1]]:getDimensions()

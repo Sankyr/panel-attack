@@ -64,6 +64,139 @@ local input_delta = 0.0
 local pointer_hidden = false
 local mainloop = nil
 
+
+-- local cpml = require "cpml"
+-- local vertices = require "cube"
+
+--[[local vertices = {
+	--bottom              -- first 3 numbers is x , y, z for vertex
+	                      -- second 2 are UV data to match the texture to the mesh
+	                      -- 3 vertices to a triangle 2 triangles to a face of the cube
+	{-1, 1, -1,  0,0},
+	{1, 1, -1,   1,0},
+	{-1, -1, -1, 0,1},
+
+	{1, 1, -1,   1,0},
+	{1, -1, -1,  1,1},
+	{-1, -1, -1, 0,1},
+
+	--top
+	{-1, 1, 1,   0,0},
+	{1, 1, 1,    1,0},
+	{-1, -1, 1,  0,1},
+
+	{1, 1, 1,    1,0},
+	{1, -1, 1,   1,1},
+	{-1, -1, 1,  0,1},
+
+	--right side
+	{1, 1, -1,   1,0},
+	{1, 1, 1,    1,1},
+	{1, -1, -1,  0,0},
+
+	{1, 1, 1,    1,1},
+	{1, -1, 1,   0,1},
+	{1, -1, -1,  0,0},
+
+	--left side
+	{-1, 1, -1,  1,0},
+	{-1, 1, 1,   1,1},
+	{-1, -1, -1, 0,0},
+
+	{-1, 1, 1,   1,1},
+	{-1, -1, 1,  0,1},
+	{-1, -1, -1, 0,0},
+
+	--back side
+	{-1, 1, 1,   0,1},
+	{1, 1, 1,    1,1},
+	{-1, 1, -1,  0,0},
+
+	{1, 1, 1,    1,1},
+	{1, 1, -1,   1,0},
+	{-1, 1, -1,  0,0},
+
+	--front side
+	{-1, -1, 1,  0,1},
+	{1, -1, 1,   1,1},
+	{-1, -1, -1, 0,0},
+
+	{1, -1, 1,   1,1},
+	{1, -1, -1,  1,0},
+	{-1, -1, -1, 0,0},
+
+}--]]
+local vertices = {
+  {0, 0, 0,  0,0},
+	{0, 1, 0,  0,1},
+	{1, 1, 0,  1,1},
+	
+  {0, 0, 0,  0,0},
+	{1, 0, 0,  1,0},
+	{1, 1, 0,  1,1}}
+
+local shader
+
+--initial position and angle of Camera
+--[[local cameraPos = cpml.vec3(0, 0, -15)
+local angle     = cpml.vec2(0, 0)
+
+--initial transforms for the cubes
+local cube1 = cpml.mat4.identity()
+cube1:translate(cube1, cpml.vec3(1,0,0))
+
+local cube2 = cpml.mat4.identity()
+cube2:translate(cube2, cpml.vec3(5,4,0))
+--]]
+
+
+--Custom vertex format add z to vertex position
+local format = {
+	{
+		"VertexPosition",
+		"float",
+		3
+	},
+	{
+		"VertexTexCoord",
+		"float",
+		2
+	},
+}
+
+local function createCylinderMesh()
+  local mesh = {}
+  local numSegments = 32
+  for i = 0, numSegments - 1 do
+    local pos = i / numSegments
+    local nextPos = (i + 1) / numSegments
+    table.insert(mesh, {math.cos(-2*math.pi*pos), -1, math.sin(-2*math.pi*pos),  pos,0})
+    table.insert(mesh, {math.cos(-2*math.pi*pos), 1, math.sin(-2*math.pi*pos),  pos,1})
+    table.insert(mesh, {math.cos(-2*math.pi*nextPos), 1, math.sin(-2*math.pi*nextPos),  nextPos,1})
+    
+    table.insert(mesh, {math.cos(-2*math.pi*pos), -1, math.sin(-2*math.pi*pos),  pos,0})
+    table.insert(mesh, {math.cos(-2*math.pi*nextPos), -1, math.sin(-2*math.pi*nextPos),  nextPos,0})
+    table.insert(mesh, {math.cos(-2*math.pi*nextPos), 1, math.sin(-2*math.pi*nextPos),  nextPos,1})
+  end
+  return mesh
+end
+
+local function setup3dMode()
+	--load texture 
+
+	--love.graphics.setBackgroundColor(.5,.5,.5)
+
+	--Creates mesh using our format and vertices. It will be drawn as a set of triangles
+	--We set the texture to our image and load our shader.
+  --print(dump(createCylinderMesh()))
+	mesh3d = love.graphics.newMesh(format, createCylinderMesh(), "triangles")
+  --mesh3d = love.graphics.newMesh(format, vertices, "triangles")
+	shader = love.graphics.newShader("basicRender.glsl")
+
+	--Sets DepthMode. Prevents items being drawn out of order
+  cursorPos = {0, 0}
+end
+
 -- Called at the beginning to load the game
 function love.load()
 
@@ -86,6 +219,8 @@ function love.load()
   mainloop = coroutine.create(fmainloop)
 
   GAME.globalCanvas = love.graphics.newCanvas(canvas_width, canvas_height, {dpiscale=GAME:newCanvasSnappedScale()})
+  
+  setup3dMode()
 end
 
 function love.focus(f)
@@ -156,6 +291,54 @@ function love.update(dt)
   GAME.rich_presence:runCallbacks()
 end
 
+function draw3dMode(player)
+	love.graphics.push("all")
+  love.graphics.setDepthMode("lequal", true)
+	--centers the world on the screen
+	local w, h = love.graphics.getDimensions()
+	love.graphics.translate(w/2, h/2)
+
+	--Sends the view and model transforms to shader
+  local fov = math.pi * 30 / 180
+  local far = 50
+  local near = 1
+  local boardRatio = 936/612
+  shader:send("perspective", {
+      {1/((w/h)*math.tan(fov/2)), 0, 0, 0},-- -3.5
+      {0, 1/(math.tan(fov/2)), 0, 0},
+      {0, 0, -((far+near)/(far-near)), -((2*far*near)/(far-near))},
+      {0, 0, -1, 0}})
+  --[[shader:send("perspective", {
+      {1, 0, 0, 0},
+      {0, 1, 0, 0},
+      {0, 0, 1, 0},
+      {0, 0, 0, 1}})--]]
+	shader:send("view", {
+      {1, 0, 0, 0},
+      {0, 1, 0, 0},
+      {0, 0, 1, 0},
+      {0, 0, 0, 1}})
+	shader:send("model_matrix", {
+      {1, 0, 0, 0}, -- -1
+      {0, boardRatio, 0, .25},
+      {0, 0, 1, -8},
+      {0, 0, 0, 1}})
+  shader:send("rotation", cursorPos[player]/18)
+  shader:send("playerSide", player * 2 - 3)
+
+	--Sets the shader
+	love.graphics.setShader(shader)
+
+	--Draw mesh and clear shader.
+	love.graphics.setColor(1,0,0)
+	love.graphics.draw(mesh3d)
+	love.graphics.setShader()
+  love.graphics.setDepthMode("always", true)
+	love.graphics.pop()
+
+	love.graphics.print("FPS " .. love.timer.getFPS(), 20, 20*6)
+end
+
 -- Called whenever the game needs to draw.
 function love.draw()
   if GAME then
@@ -163,7 +346,7 @@ function love.draw()
   end
 
   -- Clear the screen
-  love.graphics.setCanvas(GAME.globalCanvas)
+  love.graphics.setCanvas({GAME.globalCanvas, depth=true})
   love.graphics.setBackgroundColor(unpack(global_background_color))
   love.graphics.clear()
 
@@ -180,6 +363,8 @@ function love.draw()
     gfx_q[i][1](unpack(gfx_q[i][2]))
   end
   gfx_q:clear()
+  
+  --draw3dMode()
 
   if GAME.foreground_overlay then
     local scale = canvas_width / math.max(GAME.foreground_overlay:getWidth(), GAME.foreground_overlay:getHeight()) -- keep image ratio

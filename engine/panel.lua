@@ -687,7 +687,7 @@ function Panel.switch(panel1, panel2, panels)
   -- confirm the panels are directly adjacent to each other
   local rowDiff = panel1.row - panel2.row
   local colDiff = panel1.column - panel2.column
-  assert(math.abs(rowDiff + colDiff) == 1)
+  --assert(math.abs(rowDiff + colDiff) == 1)
 
   local coordinates1 = { row = panel1.row, column = panel1.column}
   local coordinates2 = { row = panel2.row, column = panel2.column}

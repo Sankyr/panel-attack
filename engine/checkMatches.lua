@@ -153,7 +153,11 @@ function Stack:getMatchingPanels()
       end
     end
     -- to the left
-    for column = candidatePanels[i].column - 1, 1, -1 do
+    for j = 1, self.width do -- candidatePanels[i].column - 1, 1, -1 do
+      local column = (candidatePanels[i].column - j) % self.width
+      if column == 0 then
+        column = self.width
+      end
       panel = panels[candidatePanels[i].row][column]
       if panel.color == candidatePanels[i].color  and canMatch(panel) then
         horizontallyConnected[#horizontallyConnected + 1] = panel
@@ -162,7 +166,12 @@ function Stack:getMatchingPanels()
       end
     end
     -- to the right
-    for column = candidatePanels[i].column + 1, self.width do
+    -- update this later
+    for j = 1, self.width do -- candidatePanels[i].column + 1, self.width do
+      local column = (candidatePanels[i].column + j) % self.width
+      if column == 0 then
+        column = self.width
+      end
       panel = panels[candidatePanels[i].row][column]
       if panel.color == candidatePanels[i].color and canMatch(panel) then
         horizontallyConnected[#horizontallyConnected + 1] = panel
@@ -382,8 +391,8 @@ function Stack:getGarbagePanelRow()
   if string.len(self.gpanel_buffer) <= 10 * self.width then
     self:refillGarbagePanelBuffer()
   end
-  local garbagePanelRow = string.sub(self.gpanel_buffer, 1, 6)
-  self.gpanel_buffer = string.sub(self.gpanel_buffer, 7)
+  local garbagePanelRow = string.sub(self.gpanel_buffer, 1, self.width)
+  self.gpanel_buffer = string.sub(self.gpanel_buffer, self.width + 1)
   return garbagePanelRow
 end
 
